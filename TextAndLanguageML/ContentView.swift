@@ -11,6 +11,7 @@ import NaturalLanguage
 struct ContentView: View {
     @State var input: String = ""
     @State var result: String = ""
+    @State var names: [String:String] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -18,11 +19,12 @@ struct ContentView: View {
                 .font(.headline)
                 .textFieldStyle(.roundedBorder)
             Button {
-                predictLanguage()
+                getNamedEntities()
+                //predictLanguage()
             } label: {
                 HStack{
                     Spacer()
-                    Text("Predict language")
+                    Text("Recognise names")
                         .foregroundColor(.white)
                         .bold()
                     Spacer()
@@ -34,6 +36,10 @@ struct ContentView: View {
             }
 
             Text("Result: \(result)")
+            ForEach(names.sorted(by: >), id: \.key){key, value in
+                Text("\"\(key)\" is \(value)")
+                
+            }
                 .bold()
         }
         .padding()
@@ -41,18 +47,23 @@ struct ContentView: View {
     
     
 
-    func predictLanguage(){
-        let locale = Locale(identifier: "en")
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(input)
-        
-        guard let language = recognizer.dominantLanguage else {
-            result = "Unknown language"
-            return
+    func getNamedEntities(){
+        let tagger = NSLinguisticTagger(tagSchemes: [.nameType], options: 0)
+        tagger.string = input
+        //What to process
+        let range = NSRange(location: 0, length: input.count)
+        //Rules of processing
+        let options : NSLinguisticTagger.Options = [.omitPunctuation, .omitWhitespace, .joinNames]
+        //What are we looking for
+        let tags : [NSLinguisticTag] = [.personalName, .placeName, .organizationName]
+
+        tagger.enumerateTags(in: range, unit: .word, scheme: .nameType, options: options) { tag, tokenRange, stop in
+            if let tag = tag, tags.contains(tag){
+                let name = (input as NSString).substring(with: tokenRange)
+                self.names[name] = tag.rawValue
+                print("\"\(name)\" is: \(tag.rawValue)")
+            }
         }
-        
-        result = locale.localizedString(forLanguageCode: language.rawValue)
-        ?? "Unknown language Code"
     }
 }
 
