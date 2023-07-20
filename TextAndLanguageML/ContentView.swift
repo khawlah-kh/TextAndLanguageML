@@ -19,8 +19,9 @@ struct ContentView: View {
                 .font(.headline)
                 .textFieldStyle(.roundedBorder)
             Button {
+                print("Good morning".language)
+                print("Buenos días".language)
                 getNamedEntities()
-                //predictLanguage()
             } label: {
                 HStack{
                     Spacer()
@@ -83,3 +84,12 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+
+extension String {
+    var language: String? {
+        return NSLinguisticTagger.dominantLanguage(for: self)
+    }
+}
+
+
